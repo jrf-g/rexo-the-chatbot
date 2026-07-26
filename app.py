@@ -15,11 +15,11 @@ training_pairs = load_training_pairs("training_data.json")
 
 
 # ---------------------------------------------------------
-# 2. Build vocabulary
+# 2. Build vocabulary (now includes <unk>)
 # ---------------------------------------------------------
 def build_vocab(pairs):
-    vocab = {"<pad>":0, "<sos>":1, "<eos>":2}
-    idx = 3
+    vocab = {"<pad>":0, "<sos>":1, "<eos>":2, "<unk>":3}
+    idx = 4
     for inp, out in pairs:
         for word in (inp + " " + out).split():
             if word not in vocab:
@@ -32,10 +32,14 @@ inv_vocab = {v:k for k,v in vocab.items()}
 
 
 # ---------------------------------------------------------
-# 3. Encode sentences
+# 3. Encode sentences (unknown words → <unk>)
 # ---------------------------------------------------------
 def encode(sentence, vocab):
-    return [vocab[word] for word in sentence.split()] + [vocab["<eos>"]]
+    encoded = []
+    for word in sentence.split():
+        encoded.append(vocab.get(word, vocab["<unk>"]))
+    encoded.append(vocab["<eos>"])
+    return encoded
 
 
 # ---------------------------------------------------------
@@ -154,17 +158,18 @@ def generate_reply(model, text, max_len=10):
         next_id = torch.argmax(output).item()
         if next_id == vocab["<eos>"]:
             break
-        output_words.append(inv_vocab[next_id])
+        output_words.append(inv_vocab.get(next_id, "<unk>"))
         input_token = torch.tensor([next_id])
     return " ".join(output_words)
 
 
 # ---------------------------------------------------------
-# 10. Example usage (no Flask)
+# 10. Example usage
 # ---------------------------------------------------------
 if __name__ == "__main__":
     while True:
         msg = input("You: ").strip().lower()
         if msg in ("quit", "exit"):
             break
-        print("Rexo:", generate_reply(model, msg))
+        print("AI:", generate_reply(model, msg))
+
