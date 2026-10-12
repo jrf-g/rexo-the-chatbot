@@ -1,0 +1,1 @@
+torch~=2.2  # PyTorch deep learning framework
